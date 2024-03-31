@@ -32,4 +32,21 @@ namespace HospitalAPI.Models
             get; set;
         }
     }
+
+    public class Doctor : Staff
+    {
+        public Doctor()
+        {
+            Staff_Grade = 5;
+        }
+
+    }
+
+    public class Technician : Staff 
+    { 
+        public Technician()
+        {
+            Staff_Grade = 3;
+        }
+    }
 }

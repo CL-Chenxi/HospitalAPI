@@ -15,9 +15,9 @@ namespace HospitalAPI.Controllers
                                                               //_db is a var name, we just named
                                                               //this is a property
 
-        [HttpGet("GetPatientById")]
+        [HttpGet("GetTestResultById")]
         [SwaggerResponse(StatusCodes.Status200OK, Type = typeof(TestResult))]      //convience premade msg 
-        [SwaggerResponse(StatusCodes.Status404NotFound, "Patient ID Not Found")]
+        [SwaggerResponse(StatusCodes.Status404NotFound, "Test result ID Not Found")]
 
         public IResult GetTestResultById(int testresult_id)           //IResult -->interfeaceResult, a super type for represent anything
         {
@@ -35,7 +35,7 @@ namespace HospitalAPI.Controllers
         [SwaggerResponse(StatusCodes.Status400BadRequest, "Input Value Incorrect")]
         [SwaggerResponse(StatusCodes.Status401Unauthorized, "Unauthorized Client")]
 
-        public IResult Create([FromBody] TestResult testresult)     //FromBody means body of request, contains my request creteria,
+        public IResult Create(int treatmentId, [FromBody] TestResult testresult)     //FromBody means body of request, contains my request creteria,
                                                                     //create contains all info we need for create 
                                                                     //map the body content over patient object
                                                                     //Patient is object, patient can be called mypatient, is a name of the object
@@ -44,7 +44,13 @@ namespace HospitalAPI.Controllers
             {
                 return Results.BadRequest();
             }
+            //need to attach the test result to the corresponding Treatment Plan
+            TreatmentPlan tplan = _db.TreatmentPlanSet.Find(treatmentId);
+            if (tplan == null) { return Results.BadRequest(); }
+            tplan.TPlan_ActionLink = testresult.TestRes_ID;
+
             _db.TestResultSet.Add(testresult);        //set is like a working progress
+            _db.TreatmentPlanSet.Update(tplan);
             _db.SaveChanges();
             return Results.Ok();
         }

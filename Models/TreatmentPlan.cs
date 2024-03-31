@@ -59,4 +59,6 @@ namespace HospitalAPI.Models
         }
 
     }
+
+    public enum ActionType { prescription, test }
 }

@@ -41,6 +41,8 @@ namespace HospitalAPI.Controllers
             {
                 return Results.BadRequest();
             }
+           
+
             _db.TreatmentPlanSet.Add(treatmentplan);        //set is like a working progress
             _db.SaveChanges();
             return Results.Ok();

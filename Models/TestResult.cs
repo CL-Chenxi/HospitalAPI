@@ -8,7 +8,7 @@ namespace HospitalAPI.Models
     {
         [Key]
         [SwaggerSchema(ReadOnly = true)]
-        public string? TestRes_ID
+        public int TestRes_ID
         {
             get; set;
         }
@@ -36,5 +36,13 @@ namespace HospitalAPI.Models
         }
 
 
+    }
+
+    public enum TestType   //may need string conversion for DB
+    {
+        Blood,
+        MRI,
+        Xray,
+        CT
     }
 }

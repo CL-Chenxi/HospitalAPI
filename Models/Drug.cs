@@ -1,5 +1,6 @@
 ﻿using Swashbuckle.AspNetCore.Annotations;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
 
 namespace HospitalAPI.Models
 {
@@ -20,9 +21,13 @@ namespace HospitalAPI.Models
         {
             get; set;
         }
-        public string? Drug_AllergyList // how to express list here? 
+        public string? Drug_AllergyList //parse string into list , https://stackoverflow.com/questions/5011467/convert-string-to-liststring-in-one-line
+                                        //line 44-48 in TreatmentPlanContoller
+                                        
         { 
             get; set;
         }
+
     }
+
 }
