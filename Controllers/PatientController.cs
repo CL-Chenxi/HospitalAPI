@@ -1,6 +1,9 @@
 using HospitalAPI.Models;
+using HospitalAPI.services;
 using Microsoft.AspNetCore.Mvc;
-using Swashbuckle.AspNetCore.Annotations; // for all Swagger Annotations
+using Swashbuckle.AspNetCore.Annotations;
+using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis; // for all Swagger Annotations
 
 namespace HospitalAPI.Controllers
 {
@@ -8,18 +11,16 @@ namespace HospitalAPI.Controllers
     [Route("api/[controller]")]
     public class PatientController : ControllerBase
     {
-        private DatabaseContext _db = new DatabaseContext();  // why it gives out about the _db, what's _db represent here?
-                                                            //_db is databse objects, through this object, can access PatientSet
-                                                            //_db is a var name, we just named
-                                                            //this is a property
+
+        private PatientService _patientService = new PatientService();
 
         [HttpGet("GetPatientById")]
-        [SwaggerResponse(StatusCodes.Status200OK, Type = typeof(Patient))]      //convience premade msg 
+        [SwaggerResponse(StatusCodes.Status200OK, Type = typeof(PatientDto))]      //convience premade msg 
         [SwaggerResponse(StatusCodes.Status404NotFound, "Patient ID Not Found")]
 
-        public IResult GetPatientById(int patient_id)           //IResult -->interfeaceResult, a super type for represent anything
+        public IResult GetPatientById(int patient_id)           //IResult -->interface Result, a super type for represent anything
         {
-            var result = _db.PatientSet.Find(patient_id);       //Result is find data and send back to Swagger,
+            var result = _patientService.GetPatientById(patient_id);       //Result is find data and send back to Swagger,
                                                         //Result is data order that contains info. found in DB/error msg
             if (result == null)
             {
@@ -28,23 +29,55 @@ namespace HospitalAPI.Controllers
             return Results.Ok(result);
         }
 
+        //combine search by id and search by first / last name. Leave all fields empty to get the whole patient list
+        [HttpGet("SearchPatient")]
+        [SwaggerResponse(StatusCodes.Status200OK, Type = typeof(List<PatientDto>))]
+        [SwaggerResponse(StatusCodes.Status400BadRequest, "Input Value missing or incorrect")]
+        [SwaggerResponse(StatusCodes.Status401Unauthorized, "Unauthorized Client")]
+        public IResult SearchPatient([FromQuery] SearchPatientRequest parametersDto) //GET methods don't have a body, so use 'fromQuery' instead
+        {
+            if (parametersDto == null) { return Results.BadRequest(); }
+            
+            return Results.Ok(_patientService.SearchPatient(parametersDto));
+        }
+
+        [HttpGet("GetPatientList")]
+        [SwaggerResponse(StatusCodes.Status200OK, Type = typeof(List<PatientDto>))]
+        [SwaggerResponse(StatusCodes.Status400BadRequest, "Input Value missing or incorrect")]
+        [SwaggerResponse(StatusCodes.Status401Unauthorized, "Unauthorized Client")]
+        public IResult GetPatientList()
+        {
+            return Results.Ok(_patientService.GetAllPatients());
+        }
+
         [HttpPost("CreatePatient")]
         [SwaggerResponse(StatusCodes.Status200OK, "Patient Created")]
         [SwaggerResponse(StatusCodes.Status400BadRequest, "Input Value Incorrect")]
         [SwaggerResponse(StatusCodes.Status401Unauthorized, "Unauthorized Client")]
+        [SwaggerResponse(StatusCodes.Status404NotFound, "Patient ID Not Found")]
 
-        public IResult Create([FromBody] Patient patient)     //FromBody means body of request, contains my request creteria,
+        public IResult Create([FromBody] NewPatientRequest patientRequest)     //FromBody means body of request, contains my request criteria,
                                                                         //create contains all info we need for create 
                                                                         //map the body content over patient object
                                                                         //Patient is object, patient can be called mypatient, is a name of the object
         {
-            if (patient == null) 
+            if (patientRequest == null) 
             {
                 return Results.BadRequest();
             }
-            _db.PatientSet.Add(patient);        //set is like a working progress
-            _db.SaveChanges();
-            return Results.Ok();
+            try
+            {
+                PatientDto newPatient = _patientService.CreateNewPatient(patientRequest);
+                return Results.Ok(newPatient);
+            } catch (HospitalException)
+            { 
+                return Results.NotFound();
+            }
+            catch (Exception ex)
+            { 
+                return Results.BadRequest(ex.Message);
+            }
+
         }
 
         [HttpPut("UpdatePatient")]
@@ -53,25 +86,25 @@ namespace HospitalAPI.Controllers
         [SwaggerResponse(StatusCodes.Status401Unauthorized, "Unauthorized Client")]
         [SwaggerResponse(StatusCodes.Status404NotFound, "Patient ID Not Found")]
         
-        public IResult Update(int patient_id, [FromBody] Patient patient)
+        public IResult Update([FromBody] UpdatePatientRequest patient)
         {
-            var result = _db.PatientSet.Find(patient_id);
-            if (result == null)
+            if (patient == null)
+            {
+                return Results.BadRequest();
+            } 
+            try
+            {
+                _patientService.UpdatePatient(patient);
+                return Results.Ok();        //to say it did well
+            }catch (HospitalException)
             {
                 return Results.NotFound();
-            }
-            else
+            } 
+            catch (Exception ex) 
             {
-                result.Patient_fName = patient.Patient_fName;
-                result.Patient_lName = patient.Patient_lName;
-                result.Patient_DoB = patient.Patient_DoB;
-                result.Patient_PhoneNum = patient.Patient_PhoneNum;
-                result.Patient_Allergy = patient.Patient_Allergy;
-
-                _db.PatientSet.Update(result);
-                _db.SaveChanges();
+                return Results.BadRequest(ex.Message);
             }
-            return Results.Ok();        //to say it did well
+
         }
 
         [HttpDelete("DeletePatient")]
@@ -81,19 +114,51 @@ namespace HospitalAPI.Controllers
 
         public IResult Delete(int patient_id)
         {
-            var result = _db.PatientSet.Find(patient_id);
-            if (result == null)
+            try
+            {
+                _patientService.DeletePatient(patient_id);
+                return Results.Ok();
+            }
+            catch (HospitalException)
             {
                 return Results.NotFound();
             }
-            else
+            catch (Exception ex)
             {
-                _db.PatientSet.Remove(result);
-                _db.SaveChanges();
+                return Results.BadRequest(ex.Message);
             }
-            return Results.Ok();
         }
 
 
     }
+
+    public class SearchPatientRequest //object dedicated to receive search requests parameters from the front end
+    {
+        [AllowNull]
+        public int? Patient_Id { get; set; }
+        [MaxLength(50)]
+        [AllowNull]
+        public string? First_Name { get; set; }
+        [MaxLength(50)]
+        [AllowNull]
+        public string? Last_Name { get; set; }
+    }
+
+    public record NewPatientRequest(
+        string Patient_fName,
+        string Patient_lName,
+        DateOnly Patient_DoB,
+        string Patient_PhoneNum,
+        string Patient_Allergy
+        );
+    //object received from the front end containing all info to create a new patient in the DB
+
+    public record UpdatePatientRequest(
+        int Patient_ID,
+        string Patient_fName,
+        string Patient_lName,
+        DateOnly Patient_DoB,
+        string Patient_PhoneNum,
+        string Patient_Allergy
+    );
 }

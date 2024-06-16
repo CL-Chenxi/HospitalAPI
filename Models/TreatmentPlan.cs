@@ -1,6 +1,4 @@
 ﻿using Swashbuckle.AspNetCore.Annotations;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion; // for date conversation
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics.CodeAnalysis;// foreign key is different library, suggested solution to [AllowNull] error
@@ -11,10 +9,6 @@ namespace HospitalAPI.Models
         
         [Key]
         [SwaggerSchema(ReadOnly = true)]
-        public int TPlanEntry_ID  // this is autmatically generated, so we need Swagger wants to try to put value there, so will be a problem, so need a key for Swagger Schedme
-        {
-            get; set;
-        }
         public int Plan_ID
         {
             get; set;
@@ -29,11 +23,11 @@ namespace HospitalAPI.Models
         {
             get; set;
         }
-        public int TPlan_CycleLen
+        public int Plan_CycleLen
         {
             get; set;
         }
-        public string TPlan_Status
+        public string Plan_Status
         {
             get; set;
         }
@@ -45,20 +39,11 @@ namespace HospitalAPI.Models
        
         [MaxLength(350)]
         [AllowNull]
-        public string? TPlan_Observation
-        {
-            get; set;
-        }
-        public string TPlan_ActionType  // to be replaced with ENUM
-        {
-            get; set;
-        }
-        public int TPlan_ActionLink  // medication id or test resutlt id
+        public string Plan_Observation
         {
             get; set;
         }
 
     }
 
-    public enum ActionType { prescription, test }
 }

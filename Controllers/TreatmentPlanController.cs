@@ -1,5 +1,7 @@
 ﻿using HospitalAPI.Models;
+using HospitalAPI.services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Swashbuckle.AspNetCore.Annotations;
 using System.ComponentModel.DataAnnotations;
 
@@ -9,90 +11,211 @@ namespace HospitalAPI.Controllers
     [Route("api/[controller]")]
     public class TreatmentPlanController : Controller
     {
+        private TreatmentService _treatmentService = new TreatmentService();
         private DatabaseContext _db = new DatabaseContext();  // why it gives out about the _db, what's _db represent here?
                                                               //_db is databse objects, through this object, can access PatientSet
                                                               //_db is a var name, we just named
                                                               //this is a property
 
         [HttpGet("GetTreatmentPlanById")]
-        [SwaggerResponse(StatusCodes.Status200OK, Type = typeof(TreatmentPlan))]      //convience premade msg 
+        [SwaggerResponse(StatusCodes.Status200OK, Type = typeof(TreatmentPlanDto))]      //convience premade msg 
         [SwaggerResponse(StatusCodes.Status404NotFound, "Treatment Plan ID Not Found")]
-        public IResult GetTreatmentPlanById(int patient_id, int plan_id)           //IResult -->interfeaceResult, a super type for represent anything
+        public IResult GetTreatmentPlanById(int plan_id)           //IResult -->interfeaceResult, a super type for represent anything
         {
-            IEnumerable<TreatmentPlan> result = _db.TreatmentPlanSet //IEnummerable is a list, because, each plan contains multiple entries
-                .Where(t => t.Patient_ID == patient_id && t.Plan_ID == plan_id) //entries must match patient id and plan id you are looking for
-                .OrderByDescending(t => t.Plan_Date)
-                .ToList();       //transform into  list
-            
-            return Results.Ok(result);
-        }
-
-        [HttpPost("CreateTreatmentPlanEntry")]
-        [SwaggerResponse(StatusCodes.Status200OK, "Treatment Plan Created")]
-        [SwaggerResponse(StatusCodes.Status400BadRequest, "Input Value Incorrect")]
-        [SwaggerResponse(StatusCodes.Status401Unauthorized, "Unauthorized Client")]
-
-        public IResult Create([FromBody] TreatmentPlan treatmentplan)     //FromBody means body of request, contains my request creteria,
-                                                              //create contains all info we need for create 
-                                                              //map the body content over patient object
-                                                              //Patient is object, patient can be called mypatient, is a name of the object
-        {
-            if (treatmentplan == null)
-            {
-                return Results.BadRequest();
-            }
-           
-
-            _db.TreatmentPlanSet.Add(treatmentplan);        //set is like a working progress
-            _db.SaveChanges();
-            return Results.Ok();
-        }
-
-        [HttpPut("UpdateTreatmentPlanEntry")]
-        [SwaggerResponse(StatusCodes.Status200OK, "Treatment Plan Entry Updated")] //because u update a single line
-        [SwaggerResponse(StatusCodes.Status400BadRequest, "Input Value Incorrect")]
-        [SwaggerResponse(StatusCodes.Status401Unauthorized, "Unauthorized Client")]
-        [SwaggerResponse(StatusCodes.Status404NotFound, "Treatment Plan Entry ID Not Found")]
-
-        public IResult Update(int entry_id, [FromBody] TreatmentPlan plan)
-        {
-            var result = _db.TreatmentPlanSet.Find(entry_id);
+            var result = _treatmentService.GetTreatmentPlanById(plan_id);
             if (result == null)
             {
                 return Results.NotFound();
             }
-            else
-            {
-                result.TPlan_Status = plan.TPlan_Status;
-                result.TPlan_ActionLink = plan.TPlan_ActionLink;
-                result.TPlan_Observation = plan.TPlan_Observation;
-                result.TPlan_ActionType = plan.TPlan_ActionType;
-
-
-                _db.TreatmentPlanSet.Update(result);
-                _db.SaveChanges();
-            }
-            return Results.Ok();        //to say it did well
+            return Results.Ok(result);
         }
 
-        [HttpDelete("DeleteTreatmentPlanEntry")]        //delete entry only at this point?
+        [HttpGet("GetAllTreatmentPlansForPatient")]
+        [SwaggerResponse(StatusCodes.Status200OK, Type = typeof(List<TreatmentPlanDto>))]      //convience premade msg 
+        [SwaggerResponse(StatusCodes.Status404NotFound, "Patient Not Found")]
+        public IResult GetAllTreatmentPlansForPatient(int patient_id)           //IResult -->interfeaceResult, a super type for represent anything
+        {
+            try
+            {
+                var result = _treatmentService.GetAllTreatmentPlansForPatient(patient_id);
+                return Results.Ok(result);
+            }
+            catch (HospitalException ex) { return Results.NotFound(ex.Message); }
+            catch (Exception ex) { return Results.BadRequest(ex.Message); }
+
+        }
+
+        [HttpPost("CreateNewTreatmentPlan")]
+        [SwaggerResponse(StatusCodes.Status200OK, "Treatment Plan Created", Type = typeof(TreatmentPlanDto))]
+        [SwaggerResponse(StatusCodes.Status400BadRequest, "Input Value Incorrect")]
+        [SwaggerResponse(StatusCodes.Status401Unauthorized, "Unauthorized Client")]
+        [SwaggerResponse(StatusCodes.Status404NotFound)]
+
+        public IResult CreateTreatmentPlan([FromBody] NewPlanRequest newTreatmentPlan)     //FromBody means body of request, contains my request criteria,
+                                                                              //create contains all info we need for create 
+
+        {
+            if (newTreatmentPlan == null)
+            {
+                return Results.BadRequest();
+            }
+            try
+            {
+                TreatmentPlanDto newCreatedPlan = _treatmentService.CreateNewTreatmentPlan(newTreatmentPlan);
+                return Results.Ok(newCreatedPlan); //return the ID of the newly created plan
+            }
+            catch (HospitalException ex) { return Results.NotFound(ex.Message); }
+            catch (Exception ex) { return Results.BadRequest(ex.Message); }
+
+        }
+
+        [HttpPut("UpdateTreatmentPlan")]
+        [SwaggerResponse(StatusCodes.Status200OK, "Treatment Plan Updated")] //because u update a single line
+        [SwaggerResponse(StatusCodes.Status400BadRequest, "Input Value Incorrect")]
+        [SwaggerResponse(StatusCodes.Status401Unauthorized, "Unauthorized Client")]
+        [SwaggerResponse(StatusCodes.Status404NotFound, "Treatment Plan ID Not Found")]
+
+        public IResult UpdateTreatmentPlan([FromBody] UpdatePlanRequest planRequest)
+        {
+            if (planRequest == null)
+            {
+                return Results.BadRequest();
+            }
+            try
+            {
+                _treatmentService.UpdateTreatmentPlan(planRequest);
+                return Results.Ok();        //to say it did well
+            }
+            catch (HospitalException ex) { return Results.NotFound(ex.Message); }
+            catch (Exception ex) { return Results.BadRequest(ex.Message); }
+        }
+
+        [HttpDelete("DeleteTreatmentPlan")]
         [SwaggerResponse(StatusCodes.Status200OK, "Treatment Plan Deleted")]
         [SwaggerResponse(StatusCodes.Status401Unauthorized, "Unauthorized Client")]
         [SwaggerResponse(StatusCodes.Status404NotFound, "Treatment Plan ID Not Found")]
 
-        public IResult Delete(int entry_id)
+        public IResult DeleteTreatmentPlan(int plan_id)
         {
-            var result = _db.TreatmentPlanSet.Find(entry_id);
-            if (result == null)
+            try
             {
-                return Results.NotFound();
+                _treatmentService.DeleteTreatmentPlan(plan_id);
+                return Results.Ok();        //to say it did well
             }
-            else
+            catch (HospitalException ex) { return Results.NotFound(ex.Message); }
+            catch (Exception ex) { return Results.BadRequest(ex.Message); }
+        }
+
+
+        [HttpGet("GetAllEntriesForPlan")]
+        [SwaggerResponse(StatusCodes.Status200OK, Type = typeof(List<TreatmentEntryDto>))]
+        [SwaggerResponse(StatusCodes.Status404NotFound, "Treatment Plan ID Not Found")]
+        public IResult GetAllEntriesForPlan(int plan_id)
+        {
+            try
             {
-                _db.TreatmentPlanSet.Remove(result);
-                _db.SaveChanges();
+                var resultList = _treatmentService.GetAllPlanEntriesForPlanId(plan_id);
+                return Results.Ok(resultList);
             }
-            return Results.Ok();
+            catch (HospitalException ex) { return Results.NotFound(ex.Message); }
+            catch (Exception ex) { return Results.BadRequest(ex.Message); }
+        }
+
+        [HttpPut("UpdateTreatmentPlanEntry")]
+        [SwaggerResponse(StatusCodes.Status200OK, "Plan Entry Updated")]
+        [SwaggerResponse(StatusCodes.Status404NotFound, "Treatment Plan ID Not Found")]
+        public IResult UpdateTreatmentPlanEntry([FromBody] UpdateEntryRequest plan_entry)
+        {
+            if (plan_entry == null) return Results.BadRequest("Null body");
+            try
+            {
+                _treatmentService.UpdatePlanEntry(plan_entry);
+                return Results.Ok();
+            }
+            catch (HospitalException ex) { return Results.NotFound(ex.Message); }
+            catch (Exception ex) { return Results.BadRequest(ex.Message); }
+
+        }
+
+        [HttpPost("AddTreatmentPlanEntry")]
+        [SwaggerResponse(StatusCodes.Status200OK, "Plan Entry added", Type = typeof(TreatmentEntryDto))]
+        [SwaggerResponse(StatusCodes.Status404NotFound, "Treatment Plan ID Not Found")]
+        public IResult AddTreatmentPlanEntry([FromBody] NewEntryRequest plan_entry)
+        {
+            try
+            {
+                TreatmentEntryDto newEntry =  _treatmentService.CreateNewEntry(plan_entry);
+                return Results.Ok(newEntry);
+            }
+            catch (HospitalException ex) { return Results.NotFound(ex.Message); }
+            catch (Exception ex) { return Results.BadRequest(ex.Message); }
+        }
+
+        [HttpGet("GetTreatmentPlanEntry")]
+        [SwaggerResponse(StatusCodes.Status200OK, Type = typeof(TreatmentEntryDto))]
+        [SwaggerResponse(StatusCodes.Status404NotFound, "Treatment Plan ID Not Found")]
+        public IResult GetTreatmentPlanEntry(int entry_id)
+        {
+            var result = _treatmentService.GetTreatmentPlanEntryById(entry_id);
+            if (result == null) return Results.NotFound("Treatment Plan ID #"+entry_id+" Not Found");
+            else return Results.Ok(result);
+        }
+
+        [HttpDelete("DeleteTreatmentPlanEntry")]
+        [SwaggerResponse(StatusCodes.Status200OK, "Plan Entry Deleted")]
+        [SwaggerResponse(StatusCodes.Status401Unauthorized, "Unauthorized Client")]
+        [SwaggerResponse(StatusCodes.Status404NotFound, "Plan Entry ID Not Found")]
+        public IResult DeleteTreatmentPlanEntry(int entry_id)
+        {
+            try
+            {
+                _treatmentService.DeletePlanEntry(entry_id);
+                return Results.Ok();        //to say it did well
+            }
+            catch (HospitalException ex) { return Results.NotFound(ex.Message); }
+            catch (Exception ex) { return Results.BadRequest(ex.Message); }
         }
     }
+
+    public record NewPlanRequest(
+            int Patient_ID,
+            int Staff_ID,
+            int Plan_Cycle,
+            string Plan_Status,
+            DateOnly Plan_Date,
+            string Plan_Observation
+        );
+
+    public record NewEntryRequest(
+            int Plan_ID,
+            int Staff_ID,
+            DateOnly Last_Update,
+            string Entry_Type,
+            string Comment,
+            int? Drug_ID,
+            string? Posology,
+            string? Upload_Link
+        );
+
+    public record UpdatePlanRequest(
+            int Plan_ID,
+            int Patient_ID,
+            int Staff_ID,
+            int Plan_Cycle,
+            string Plan_Status,
+            DateOnly Plan_Date,
+            string Plan_Observation
+        );
+
+    public record UpdateEntryRequest(
+            int Entry_ID,
+            int Plan_ID,
+            int Staff_ID,
+            DateOnly Last_Update,
+            string Entry_Type,
+            string Comment,
+            int? Drug_ID,
+            string? Posology,
+            string? Upload_Link
+        );
 }

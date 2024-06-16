@@ -12,29 +12,34 @@ namespace HospitalAPI.Models
         {
             get; set;
         }
-        [MaxLength(50)]
-        [AllowNull]  // for databse when it saving to Database
-        public string? Patient_fName   // without ?, can still be Null, used more for return values in a function, with?, ti will return either s tring, or Null
-        {
-            get; set;
-        }
-        public string? Patient_lName
+        [MaxLength(50)] // for databse when it saving to Database
+        public string Patient_fName   // without ?, can still be Null, used more for return values in a function, with?, ti will return either s tring, or Null
         {
             get; set;
         }
         [MaxLength(50)]
+        public string Patient_lName
+        {
+            get; set;
+        }
+
         public DateOnly Patient_DoB 
         { 
             get; set; 
         }
-        public int Patient_PhoneNum 
+        [AllowNull]
+        [MaxLength(50)]
+        public string Patient_PhoneNum 
         { 
             get; set;
         }
+        [AllowNull]
+        [MaxLength(50)]
         public string Patient_Allergy 
         { 
             get; set;
         }
         
     }
+
 }

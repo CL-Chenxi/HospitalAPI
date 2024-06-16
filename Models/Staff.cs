@@ -1,6 +1,7 @@
 ﻿using Swashbuckle.AspNetCore.Annotations;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
 
 namespace HospitalAPI.Models
 {
@@ -23,11 +24,16 @@ namespace HospitalAPI.Models
             get; set;
         }
         [MaxLength(50)]
-        public int? Staff_PhoneNum
+        [AllowNull]
+        public string Staff_PhoneNum
         {
             get; set;
         }
         public int Staff_Grade
+        {
+            get; set;
+        }
+        public Boolean Staff_Active
         {
             get; set;
         }
@@ -49,4 +55,5 @@ namespace HospitalAPI.Models
             Staff_Grade = 3;
         }
     }
+
 }

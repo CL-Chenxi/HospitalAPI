@@ -1,40 +1,47 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Microsoft.Extensions.Options;
 
 namespace HospitalAPI.Models
 {
-    public class DatabaseContext : DbContext  //DbContext is a librarry from EntityFrameworkCore, its a class to allows u to connect to Databs, insert/rettrivee
+    public class DatabaseContext : DbContext  //DbContext is a library from EntityFrameworkCore, its a class to allows u to connect to Databs, insert/rettrivee
     {
+        /*
+        public DatabaseContext() : base()
+        {
+        }
+        public DatabaseContext(DbContextOptions<DatabaseContext> options) : base(options) { }*/
+
         protected override void ConfigureConventions(ModelConfigurationBuilder builder)   //because it is inhearitence from DbContext,
-                                                                                          //u need to deifne few things, 1st is configuration, 
+                                                                                          //u need to define few things, 1st is configuration, 
                                                                                           //ModelConfigurationBuilder is the type of builder, builder is the var name
         {
-            builder.Properties<DateOnly>()              //DateOnly feild in models are not comptaible with Databse feild, so need conversion
+            builder.Properties<DateOnly>()              //DateOnly field in models are not compatible with Databse field, so need conversion
                 .HaveConversion<DateOnlyConverter>()
                 .HaveColumnType("date"); //EntityFrameworkCore.Relational
             base.ConfigureConventions(builder);
         }
-
+        
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            var configstr = @"Data Source=(LocalDB)\MSSQLLocalDB;Initial Catalog=Hospital_DB;User id=sa;Password=pwd;
+
+            var configstr = @"Data Source=(LocalDB)\MSSQLLocalDB;Initial Catalog=Hospital_DB-9;User id=sa;Password=pwd;
                             Trusted_Connection=True;Integrated Security=SSPI;"; //Secure support provider interface for MS DB
-                                                                                 //why do we need varible? we need to define the data source among other thing
-                                                                                 //this is the way we define which data source we connect to
-                                                                                 //(LocalDB)\MSSQLLocalDB- database type
-                                                                                 //Initial Cata -- name of my DB
+                                                                                    //why do we need varible? we need to define the data source among other thing
+                                                                                    //this is the way we define which data source we connect to
+                                                                                    //(LocalDB)\MSSQLLocalDB- database type
+                                                                                    //Initial Cata -- name of my DB
 
             optionsBuilder.UseSqlServer(configstr);             //to tell DBContext to use SQL server
+
         }
+        
 
-        public DbSet<Patient> PatientSet { get; set; }            //structure who represent database tables, DbSet<Patient> repreent patient table
-        public DbSet<Staff> StaffSet { get; set; }          //this is intermediary for databse tables
+        public DbSet<Patient> PatientSet { get; set; }            //structure who represent database tables, DbSet<Patient> represent patient table
+        public DbSet<Staff> StaffSet { get; set; }          //this is intermediary for database tables
         public DbSet<TreatmentPlan> TreatmentPlanSet { get; set; }
-        public DbSet<MedicationPlan> MedicationPlanSet { get; set; }
         public DbSet<Drug> DrugSet { get; set; }
-        public DbSet<TestResult> TestResultSet { get; set; }
-
-            
+        public DbSet<TreatmentPlanEntry> TreatmentPlanEntrySet { get;set; } //replace Medication and TestResult
 
 
     }
@@ -64,5 +71,10 @@ namespace HospitalAPI.Models
 
 
     //add-migration Hospital_DB //create migration folder (use only once)
-    //update-database -verbose //run everytime you change your db
+    //update-database Hospital_DB -verbose //run everytime you change your db
+
+    //if need to delete database and restart from fresh after deleting the .mdf file, and getting rid of the "database already exists" error:
+    //sqllocaldb stop
+    //sqllocaldb delete
+    //update-database Hospital_DB -verbose
 }

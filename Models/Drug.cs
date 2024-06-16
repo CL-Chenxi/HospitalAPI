@@ -12,19 +12,23 @@ namespace HospitalAPI.Models
         {
             get; set;
         }
-
+        [MaxLength(50)]
         public string Drug_Name
         {
             get; set;
         }
+        [MaxLength(50)]
         public string Drug_Dosage  // to research if a special 
         {
             get; set;
         }
-        public string? Drug_AllergyList //parse string into list , https://stackoverflow.com/questions/5011467/convert-string-to-liststring-in-one-line
-                                        //line 44-48 in TreatmentPlanContoller
-                                        
+        [AllowNull]
+        public string Drug_AllergyList 
         { 
+            get; set;
+        }
+        public Boolean Drug_Available
+        {
             get; set;
         }
 

@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HospitalAPI.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    [Migration("20240310220911_Hospital_DB")]
+    [Migration("20240609151515_Hospital_DB")]
     partial class Hospital_DB
     {
         /// <inheritdoc />
@@ -34,44 +34,25 @@ namespace HospitalAPI.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Drug_ID"));
 
                     b.Property<string>("Drug_AllergyList")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("Drug_Available")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Drug_Dosage")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("Drug_Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.HasKey("Drug_ID");
 
                     b.ToTable("DrugSet");
-                });
-
-            modelBuilder.Entity("HospitalAPI.Models.MedicationPlan", b =>
-                {
-                    b.Property<int>("MPlanEntry_ID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MPlanEntry_ID"));
-
-                    b.Property<int>("Drug_ID")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("MedPlan_Date")
-                        .HasColumnType("date");
-
-                    b.Property<int>("MedPlan_ID")
-                        .HasColumnType("int");
-
-                    b.Property<string>("MedPlan_Posology")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("MPlanEntry_ID");
-
-                    b.ToTable("MedicationPlanSet");
                 });
 
             modelBuilder.Entity("HospitalAPI.Models.Patient", b =>
@@ -84,21 +65,26 @@ namespace HospitalAPI.Migrations
 
                     b.Property<string>("Patient_Allergy")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<DateTime>("Patient_DoB")
-                        .HasMaxLength(50)
                         .HasColumnType("date");
 
-                    b.Property<int>("Patient_PhoneNum")
-                        .HasColumnType("int");
+                    b.Property<string>("Patient_PhoneNum")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("Patient_fName")
+                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("Patient_lName")
-                        .HasColumnType("nvarchar(max)");
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.HasKey("Patient_ID");
 
@@ -113,12 +99,16 @@ namespace HospitalAPI.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Staff_ID"));
 
+                    b.Property<bool>("Staff_Active")
+                        .HasColumnType("bit");
+
                     b.Property<int>("Staff_Grade")
                         .HasColumnType("int");
 
-                    b.Property<int?>("Staff_PhoneNum")
+                    b.Property<string>("Staff_PhoneNum")
+                        .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("int");
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("Staff_fName")
                         .IsRequired()
@@ -135,75 +125,77 @@ namespace HospitalAPI.Migrations
                     b.ToTable("StaffSet");
                 });
 
-            modelBuilder.Entity("HospitalAPI.Models.TestResult", b =>
-                {
-                    b.Property<string>("TestRes_ID")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("Staff_ID")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("TestRes_Date")
-                        .HasColumnType("date");
-
-                    b.Property<string>("TestRes_Link")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("TestRes_Observation")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("TestRes_Type")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("TestRes_ID");
-
-                    b.ToTable("TestResultSet");
-                });
-
             modelBuilder.Entity("HospitalAPI.Models.TreatmentPlan", b =>
                 {
-                    b.Property<int>("TPlanEntry_ID")
+                    b.Property<int>("Plan_ID")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TPlanEntry_ID"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Plan_ID"));
 
                     b.Property<int>("Patient_ID")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Plan_CycleLen")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("Plan_Date")
                         .HasColumnType("date");
 
-                    b.Property<int>("Plan_ID")
-                        .HasColumnType("int");
+                    b.Property<string>("Plan_Observation")
+                        .IsRequired()
+                        .HasMaxLength(350)
+                        .HasColumnType("nvarchar(350)");
+
+                    b.Property<string>("Plan_Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Staff_ID")
                         .HasColumnType("int");
 
-                    b.Property<int>("TPlan_ActionLink")
-                        .HasColumnType("int");
-
-                    b.Property<string>("TPlan_ActionType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("TPlan_CycleLen")
-                        .HasColumnType("int");
-
-                    b.Property<string>("TPlan_Observation")
-                        .HasMaxLength(350)
-                        .HasColumnType("nvarchar(350)");
-
-                    b.Property<string>("TPlan_Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("TPlanEntry_ID");
+                    b.HasKey("Plan_ID");
 
                     b.ToTable("TreatmentPlanSet");
+                });
+
+            modelBuilder.Entity("HospitalAPI.Models.TreatmentPlanEntry", b =>
+                {
+                    b.Property<int>("Entry_ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Entry_ID"));
+
+                    b.Property<string>("Comment")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("Drug_ID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Entry_Type")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("Last_Update")
+                        .HasColumnType("date");
+
+                    b.Property<int>("Plan_ID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Posology")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Staff_ID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UploadLink")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Entry_ID");
+
+                    b.ToTable("TreatmentPlanEntrySet");
                 });
 #pragma warning restore 612, 618
         }
